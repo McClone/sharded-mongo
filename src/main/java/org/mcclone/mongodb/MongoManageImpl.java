@@ -37,11 +37,8 @@ class MongoManageImpl implements MongoManage {
     public void createShardCollection(String shardCollection, List<ShardInfo> shardInfoList, String keyField, KeyStrategy keyStrategy) throws Exception {
         switch (keyStrategy) {
             case HASH:
-                List<Ranges.Range> ranges = Ranges.build(shardInfoList.size()).getRanges();
                 List<Document> data = new ArrayList<>();
-                for (int i = 0; i < shardInfoList.size(); i++) {
-                    ShardInfo shardInfo = shardInfoList.get(i);
-                    Ranges.Range range = ranges.get(i);
+                for (ShardInfo shardInfo : shardInfoList) {
                     Document document = new Document();
                     document.put("collectionName", shardInfo.getCollectionName());
                     document.put("databaseName", shardInfo.getDatabaseName());
@@ -49,8 +46,6 @@ class MongoManageImpl implements MongoManage {
                     document.put("password", shardInfo.getPassword());
                     document.put("host", shardInfo.getHost());
                     document.put("port", shardInfo.getPort());
-                    document.put("startKey", range.getStartKey());
-                    document.put("endKey", range.getEndKey());
                     document.put("keyField", keyField);
                     document.put("keyStrategy", keyStrategy.name());
                     document.put("shardCollection", shardCollection);
@@ -71,12 +66,11 @@ class MongoManageImpl implements MongoManage {
         List<ShardCollectionInfo> shardCollectionInfos = new ArrayList<>();
         for (Document document : collection.find()) {
             ShardCollectionInfo shardCollectionInfo = new ShardCollectionInfo();
+            shardCollectionInfo.setId(document.getString("_id"));
             shardCollectionInfo.setKeyStrategy(document.getString("keyStrategy"));
             shardCollectionInfo.setKeyField(document.getString("keyField"));
             shardCollectionInfo.setShardCollection(document.getString("shardCollection"));
 
-            shardCollectionInfo.setStartKey(document.getLong("startKey"));
-            shardCollectionInfo.setEndKey(document.getLong("endKey"));
             shardCollectionInfo.setHost(document.getString("host"));
             shardCollectionInfo.setPort(document.getInteger("port"));
             shardCollectionInfo.setDatabaseName(document.getString("databaseName"));

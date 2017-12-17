@@ -5,6 +5,7 @@ package org.mcclone.mongodb;
  */
 public class ShardCollectionInfo {
 
+    private String id;
     private String shardCollection;
     private String keyField;
     private String keyStrategy;
@@ -146,5 +147,13 @@ public class ShardCollectionInfo {
                 ", startKey=" + startKey +
                 ", endKey=" + endKey +
                 '}';
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

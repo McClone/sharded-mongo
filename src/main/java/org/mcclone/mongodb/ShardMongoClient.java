@@ -1,5 +1,6 @@
 package org.mcclone.mongodb;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.mongodb.BasicDBObject;
@@ -15,10 +16,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import redis.clients.util.Hashing;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * @author Administrator
@@ -61,7 +59,7 @@ public class ShardMongoClient {
                 shardCollectionInfos = shardCollectionInfoMap.get(collectionName);
                 for (ShardCollectionInfo shardCollectionInfo : shardCollectionInfos) {
                     keyField = shardCollectionInfo.getKeyField();
-                    rangeIndex.put(shardCollectionInfo.getEndKey(), shardCollectionInfo);
+                    rangeIndex.put(Hashing.MD5.hash(shardCollectionInfo.getId()), shardCollectionInfo);
                 }
             } else {
                 throw new UnsupportedOperationException(collectionName);
@@ -69,9 +67,13 @@ public class ShardMongoClient {
         }
 
         protected MongoCollection<Document> getShardConnect(Map<String, Object> document) {
-            String keyFieldValue = (String) document.get(keyField);
+            Preconditions.checkArgument(document.containsKey(keyField), "Data must contains keyField!");
+            String keyFieldValue = String.valueOf(document.get(keyField));
             long key = Hashing.MD5.hash(keyFieldValue);
-            document.put("rowKey", key);
+            SortedMap<Long, ShardCollectionInfo> tailMap = rangeIndex.tailMap(key);
+            if (tailMap.isEmpty()) {
+                return mongoManage.getConnect(rangeIndex.firstEntry().getValue());
+            }
             Long startKey = rangeIndex.tailMap(key).firstKey();
             return mongoManage.getConnect(rangeIndex.get(startKey));
         }
